@@ -1,9 +1,3 @@
-"""CSE423 Project: Submarine Warfare
-
-Single-file PyOpenGL/GLUT game.
-Game coordinates use (x, depth, z), where depth increases downward.
-"""
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
