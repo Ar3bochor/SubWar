@@ -35,7 +35,7 @@ SONAR_MAX_RADIUS = 510.0
 SONAR_SPEED = 390.0
 SONAR_COOLDOWN = 6.5
 
-STARTING_AMMO = {"STANDARD": 24, "HOMING": 10, "EMP": 6}
+STARTING_AMMO = {"STANDARD": 40, "HOMING": 30, "EMP": 20}
 WEAPON_ORDER = ("STANDARD", "HOMING", "EMP")
 WEAPON_STATS = {
     "STANDARD": {"damage": 58.0, "speed": 325.0, "color": (1.0, 0.78, 0.12)},
@@ -59,7 +59,7 @@ COLOR_PRESETS = (
     {"name": "ARCTIC TEAL", "body": (0.08, 0.46, 0.56), "dark": (0.025, 0.14, 0.20), "accent": (0.28, 0.95, 0.96), "hud": (0.20, 0.90, 1.0)},
     {"name": "CRIMSON TIDE", "body": (0.58, 0.09, 0.12), "dark": (0.20, 0.025, 0.035), "accent": (1.0, 0.42, 0.22), "hud": (1.0, 0.52, 0.32)},
     {"name": "GOLDEN TRIDENT", "body": (0.62, 0.43, 0.08), "dark": (0.22, 0.13, 0.025), "accent": (1.0, 0.86, 0.25), "hud": (1.0, 0.80, 0.22)},
-    {"name": "PHANTOM", "body": (0.20, 0.23, 0.31), "dark": (0.035, 0.04, 0.07), "accent": (0.58, 0.72, 1.0), "hud": (0.52, 0.68, 1.0)},
+    {"name": "POOKIE", "body": (0.92, 0.48, 0.68), "dark": (0.30, 0.08, 0.18), "accent": (1.0, 0.78, 0.90), "hud": (1.0, 0.62, 0.82)},
     {"name": "CORAL RESCUE", "body": (0.82, 0.25, 0.16), "dark": (0.28, 0.055, 0.035), "accent": (1.0, 0.74, 0.40), "hud": (1.0, 0.62, 0.36)},
     {"name": "EMERALD CURRENT", "body": (0.08, 0.46, 0.30), "dark": (0.02, 0.16, 0.10), "accent": (0.32, 1.0, 0.60), "hud": (0.25, 1.0, 0.55)},
     {"name": "ROYAL ABYSS", "body": (0.38, 0.12, 0.56), "dark": (0.12, 0.025, 0.20), "accent": (0.86, 0.45, 1.0), "hud": (0.80, 0.48, 1.0)},
@@ -805,9 +805,6 @@ def draw_boundaries():
     bottom = -WORLD_BOTTOM
     half = WORLD_HALF_SIZE
 
-    # Blend the enclosing walls over the scene instead of hiding objects behind
-    # opaque quads. Disabling depth writes prevents a translucent wall from
-    # incorrectly concealing geometry that is drawn later in the frame.
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glDepthMask(GL_FALSE)
@@ -862,6 +859,7 @@ def draw_rocks():
         glPushMatrix()
         glTranslatef(render_x, render_y, render_z)
         glRotatef((rock["x"] * 0.23) % 360.0, 0, 0, 1)
+        # Rock Body
         draw_ellipsoid((radius * scale_x * 0.65, radius * scale_y * 0.65, height * scale_z * 0.55), (0.29, 0.40, 0.40), 10)
         for offset_x, offset_y, offset_z, size in ((-0.28, -0.15, 0.30, 0.30), (0.24, 0.18, 0.05, 0.22), (-0.10, 0.27, -0.24, 0.17)):
             glPushMatrix()
@@ -874,14 +872,17 @@ def draw_rocks():
 def draw_kelp_and_coral():
     """Render animated kelp strands and coral decorations."""
     q = get_quadric()
+    # Kelp
     for index, plant in enumerate(kelp):
         render_x, render_y, render_z = world_to_render(plant["x"], WORLD_BOTTOM - 3, plant["z"])
         sway = math.sin(scene_time * 1.15 + plant["phase"]) * 8.0
         glPushMatrix()
         glTranslatef(render_x, render_y, render_z)
         glRotatef(sway, 0, 1, 0)
+        # Stem
         glColor3f(0.035, 0.31 + (index % 3) * 0.035, 0.19)
         gluCylinder(q, 2.2, 1.1, plant["height"], 7, 5)
+        # Leaves
         glColor3f(0.07, 0.48, 0.27)
         for height_ratio, side in ((0.35, -1), (0.58, 1), (0.78, -1)):
             glPushMatrix()
@@ -890,6 +891,7 @@ def draw_kelp_and_coral():
             glutSolidCube(1.0)
             glPopMatrix()
         glPopMatrix()
+    # Coral
     for index in range(14):
         x = -590.0 + (index * 197) % 1180
         z = -570.0 + (index * 277) % 1140
@@ -897,6 +899,7 @@ def draw_kelp_and_coral():
         glPushMatrix()
         glTranslatef(render_x, render_y, render_z)
         glColor3f(0.58, 0.14 + (index % 3) * 0.07, 0.18 + (index % 2) * 0.12)
+        # Branches
         for branch in (-16.0, 0.0, 16.0):
             glPushMatrix()
             glTranslatef(branch, 0, 0)
@@ -929,14 +932,16 @@ def draw_fish_school():
         size = animal["size"]
         glScalef(size, size, size)
         color = colors[animal["school"]]
+        # Fish body
         draw_ellipsoid((3.6, 11.0, 5.5), color)
-        # Two small eyes so the front of the fish is easy to see.
+        # Two small eyes
         for side in (-1, 1):
             glPushMatrix()
             glTranslatef(side * 2.8, 6.5, 2.0)
             draw_ellipsoid((0.7, 1.1, 1.1), (0.025, 0.04, 0.05), 8)
             glPopMatrix()
         glColor3f(*(component * 0.85 for component in color))
+        # Fish Fins
         glBegin(GL_QUADS)
         for vertices in (((0, -5, 3), (0, -4, 11), (0, 4, 4), (0, 4, 4)),
                          ((-2, 0, 0), (-9, -4, -1), (-3, -6, 0), (-3, -6, 0)),
@@ -945,7 +950,9 @@ def draw_fish_school():
                 glVertex3f(*vertex)
         glEnd()
         glTranslatef(0, -9, 0)
+        # Tail Animation
         glRotatef(math.sin(scene_time * 9 + animal["phase"]) * 28, 0, 0, 1)
+        # Fish Tail
         glBegin(GL_QUADS)
         for vertex in ((0, 0, 0), (0, -9, 8), (0, -6, 0), (0, -9, -8)):
             glVertex3f(*vertex)
@@ -962,11 +969,13 @@ def draw_wreck():
     glPushMatrix()
     glTranslatef(render_x, render_y, render_z)
     glRotatef(28.0, 0, 0, 1)
+    # Main Wreck Hull
     glColor3f(0.17, 0.24, 0.25)
     glPushMatrix()
     glRotatef(-90, 1, 0, 0)
     gluCylinder(q, 25.0, 18.0, 95.0, 13, 7)
     glPopMatrix()
+    # Damaged Cabin
     glColor3f(0.30, 0.18, 0.10)
     glPushMatrix()
     glTranslatef(0, 20.0, 28.0)
@@ -985,7 +994,9 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
     glTranslatef(render_x, render_y, render_z)
     glRotatef(-angle, 0, 0, 1)
     glScalef(scale, scale, scale)
+    # Main Body
     draw_ellipsoid((25.0, 65.0, 23.0), body, 24)
+    # Windows and ports
     for side in (-1, 1):
         for port in range(4):
             glPushMatrix()
@@ -993,20 +1004,24 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
             draw_ellipsoid((2.3, 3.8, 3.8), accent, 8)
             glPopMatrix()
     glColor3f(*dark)
+    # Tower (Antenna mast)
     glPushMatrix()
     glTranslatef(0, -2.0, 29.0)
     glScalef(25.0, 34.0, 18.0)
     glutSolidCube(1.0)
     glPopMatrix()
     glColor3f(*accent)
+    # Tower Side Domes
     for side in (-1, 1):
         glPushMatrix()
         glTranslatef(side * 10.0, 10.0, 35.0)
         gluSphere(q, 4.0, 8, 5)
         glPopMatrix()
+    #Periscope
     glPushMatrix()
     glTranslatef(0, 2.0, 42.0)
     gluCylinder(q, 3.2, 3.0, 23.0, 9, 5)
+    # Periscope Lens
     glPopMatrix()
     glPushMatrix()
     glTranslatef(0, 2.0, 65.0)
@@ -1014,6 +1029,7 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
     gluCylinder(q, 3.1, 3.1, 15.0, 9, 5)
     glPopMatrix()
     glColor3f(*dark)
+    # Fins
     glPushMatrix()
     glTranslatef(0, 6.0, 0)
     glScalef(76.0, 17.0, 4.5)
@@ -1025,17 +1041,20 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
     glutSolidCube(1.0)
     glPopMatrix()
     glColor3f(*dark)
+    # Side Fins
     for side in (-1, 1):
         glPushMatrix()
         glTranslatef(side * 12.0, 48.0, -4.0)
         glRotatef(-90, 1, 0, 0)
         gluCylinder(q, 4.8, 4.2, 18.0, 9, 5)
         glPopMatrix()
+    # Propeller
     glPushMatrix()
     glTranslatef(0, -63.0, 0)
     glColor3f(*accent)
     gluSphere(q, 7.0, 10, 6)
     glRotatef(propeller, 0, 1, 0)
+    # Propeller Blades
     for blade in (0, 60, 120, 180, 240, 300):
         glPushMatrix()
         glRotatef(blade, 0, 1, 0)
@@ -1044,6 +1063,8 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
         glutSolidCube(1.0)
         glPopMatrix()
     glPopMatrix()
+    # Variant-specific details
+    # Boss
     if variant == "boss":
         glColor3f(1.0, 0.62, 0.10)
         for side in (-1, 1):
@@ -1052,6 +1073,7 @@ def draw_submarine(x, depth, z, angle, palette, scale=1.0, variant="player", pro
             glScalef(17.0, 72.0, 12.0)
             glutSolidCube(1.0)
             glPopMatrix()
+    # Escort
     elif variant == "escort":
         glColor3f(1.0, 0.86, 0.20)
         glPushMatrix()
@@ -2244,9 +2266,9 @@ def apply_reward(index):
     """Grant the ammunition, repair, or recharge reward for a completed mission."""
     global decoy_count, sonar_cooldown
     if index == 1:
-        ammo["STANDARD"] += 4
+        ammo["STANDARD"] += 20
     elif index == 2:
-        ammo["HOMING"] += 2
+        ammo["HOMING"] += 20
     elif index == 3:
         player["hull"] = min(player["max_hull"], player["hull"] + 20.0)
     elif index == 4:
